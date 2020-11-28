@@ -54,7 +54,7 @@ module.exports = msgHandler = async (client, message) => {
                 Iv: '[❗] Link yang anda kirim tidak valid!'
             }
         }
-        const apiKey = 'INSERT API' // apikey you can get it at https://mhankbarbar.herokuapp.com/api
+        const apiKey = '5osSFJrThf33Xe2c69GS' // apikey you can get it at https://mhankbarbar.herokuapp.com/api
         const time = moment(t * 1000).format('DD/MM HH:mm:ss')
         const botNumber = await client.getHostNumber()
         const blockNumber = await client.getBlockedIds()
@@ -709,9 +709,7 @@ Instagram? : https://www.instagram.com/iyusakha/
 
 Bot ini di buat dengan bahasa pemrograman Node.js / JavaScript
 Source kode bot :
-https://github.com/mhankbarbar/whatsapp-bot
-
-Gw edit
+https://github.com/Yusakha/Rin
 
 Owner Bot Rin : !creator`)
             break
