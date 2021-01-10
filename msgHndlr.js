@@ -8,13 +8,17 @@ const color = require('./lib/color')
 const { spawn, exec } = require('child_process')
 const nhentai = require('nhentai-js')
 const { API } = require('nhentai-api')
+const urlShortener = require('./lib/shortener')
+// const nhentai = require('./lib/nhentai2')
+const { MessageType } = require("@adiwajshing/baileys");
 const { api } = require('./lib')
 const { liriklagu, quotemaker, randomNimek, fb, sleep} = require('./lib/functions')
 const { help, snk, info, donate, readme, listChannel } = require('./lib/help')
 const { meme,translate, images } = require('./lib/index')
 const { stdout } = require('process')
 const bent = require('bent')
-const { uploadImages } = require('./utils/fetcher')
+const {tiktok, instagram, facebook, youtube, likee, twitter} = require('./lib/dl')
+const { uploadImages, fetchBase64 } = require('./utils/fetcher')
 const errorurl2 = 'https://steamuserimages-a.akamaihd.net/ugc/954087817129084207/5B7E46EE484181A676C02DFCAD48ECB1C74BC423/?imw=512&&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false'
 
 moment.tz.setDefault('Asia/Jakarta').locale('id')
@@ -30,6 +34,7 @@ module.exports = msgHandler = async (client, message) => {
         const command = commands.toLowerCase().split(' ')[0] || ''
         const args =  commands.split(' ')
         const isQuotedImage = quotedMsg && quotedMsg.type === 'image'
+        // const messageType = Object.keys(messageContent)[0] // message will always contain one key signifying what kind of message
 
         const msgs = (message) => {
             if (command.startsWith('!')) {
@@ -72,13 +77,23 @@ module.exports = msgHandler = async (client, message) => {
         //if (!isGroupMsg && !command.startsWith('!')) console.log('\x1b[1;33m~\x1b[1;37m>', '[\x1b[1;31mMSG\x1b[1;37m]', time, color(body), 'from', color(pushname))
         //if (isGroupMsg && !command.startsWith('!')) console.log('\x1b[1;33m~\x1b[1;37m>', '[\x1b[1;31mMSG\x1b[1;37m]', time, color(body), 'from', color(pushname), 'in', color(formattedTitle))
         if (isBlocked) return
-        //if (!isOwner) return
+        // if (!isOwner) return 
         switch(command) {
         case '!ss':
         case '!getss':
         case '!getses':
             const sesPic = await client.getSnapshot()
             client.sendFile(from, sesPic, 'session.png', 'Mau buat apaan...', id)
+            break
+        case '!toimg':
+            if(!quotedMsg) return client.reply(from, '.', id)
+            else if (quotedMsg && quotedMsg.type == 'video'){
+            return client.reply(from, 'that\'s not a sticker, Baka', id)
+            } if(quotedMsg) {
+            const mediaData = await decryptMedia(quotedMsg)
+            const imageBase64 = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
+            await client.sendFile(from, imageBase64, 'img.jpg')
+            }
             break
         case '!sticker':
         case '!stiker':
@@ -135,12 +150,12 @@ module.exports = msgHandler = async (client, message) => {
                 await client.reply(from, 'Tidak ada gambar! Untuk membuka cara penggnaan kirim !readme [Wrong Format]', id)
             }
             break
-        case ':v':
-            client.sendText(from, ':v')
-            break
-        case 'stress':
-            client.reply(from, 'Bener 👍',id)
-            break
+        // case ':v':
+        //     client.sendText(from, ':v')
+        //     break
+        // case 'stress':
+        //     client.reply(from, 'Bener 👍',id)
+        //     break
         case '!awallpaper':
         case '!awp':
             const awp = 'Animewallpaper'
@@ -168,6 +183,7 @@ module.exports = msgHandler = async (client, message) => {
             })
             break
         case '!milf':
+            if (!isGroupMsg) return client.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
             const milf = 'LolisAllGrownUp'
             const milfr = await images.sreddit(milf)
             await client.sendFileFromUrl(from, milfr, '', '', id)
@@ -199,9 +215,46 @@ module.exports = msgHandler = async (client, message) => {
                 client.reply(from, 'Ada yang Error!', id)
             })
             break
+        case '!shota':
+        // if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+        const imageToBase64 = require('image-to-base64')
+        var shouta = ['shota anime','anime shota'];
+        var shotaa = shouta[Math.floor(Math.random() * shouta.length)];
+        var urlshot = "https://api.fdci.se/rep.php?gambar=" + shotaa;
+        
+        axios.get(urlshot)
+        .then((result) => {
+        var sht = JSON.parse(JSON.stringify(result.data));
+        var shotaak =  sht[Math.floor(Math.random() * sht.length)];
+        imageToBase64(shotaak)
+        .then(
+            (response) => {
+        let img = 'data:image/jpeg;base64,'+response
+        client.sendFile(from, img, "shota.jpg", `*SHOTA*`, id)
+                }) 
+            .catch(
+                (error) => {
+                    console.log(error);
+                })
+        })
+        break
+        case '!neesan':
+            // if (!isOwner) return ''
+            const ara = 'oneesan'
+            const arar = await images.sreddit(ara)
+            await client.sendFileFromUrl(from, arar, '', '', id)
+            .catch(() => {
+                client.reply(from, 'Ada yang Error!', id)
+            })
+            break
         case '!sreddit':
+            if (!isOwner) return 
+            haramdes=['hentai', 'ecchi', 'oppai', 'porn', 'boobs', 'dick', 'gay', 'yuri', 'yaoi', 'ahegao']
             if (args.length == 0) return client.reply(from, `Untuk mencari gambar di sub reddit\nketik: !sreddit [search]\ncontoh: !sreddit naruto`, id)
             const carireddit = body.slice(9)
+            for (hnum = 0; hnum < haramdes.length; hnum++) {
+                if (carireddit == haramdes[hnum]) return client.reply(from,'sangean',id)
+            }
             const hasilreddit = await images.sreddit(carireddit)
             await client.sendFileFromUrl(from, hasilreddit, '', '', id)
             .catch(() => {
@@ -227,13 +280,18 @@ module.exports = msgHandler = async (client, message) => {
             const ngomong = body.slice(5)
             await client.sendText(from, ngomong)
             break
+        case '!saym':
+            if (args.length == 0) return client.reply(from, `?`, id)
+            const ngomongm = body.slice(6)
+            await client.sendTextWithMentions(from, ngomongm)
+            break
         case '!donasi':
         case '!donate':
             client.sendLinkWithAutoPreview(from, `Hai, terimakasih telah menggunakan bot ini, kamu dapat membantu dengan berdonasi melalui:
 
-[Ovo, dana, link aja]
+[Ovo, dana, link aja, Gopay]
 082230333327
-[Gopay, bank, dll]
+[Trakteer]
 https://trakteer.id/Yusakha
 (mulai dari Rp.1000)
 
@@ -269,17 +327,106 @@ hehe
                 await client.reply(from, `${res}`, id)
             })
             break
-        case '!nulis':
-            if (args.length === 1) return client.reply(from, 'Kirim perintah *!nulis [teks]*', id)
-            const nulis = encodeURIComponent(body.slice(7))
-            client.reply(from, mess.wait, id)
-            let urlnulis = `https://mhankbarbar.herokuapp.com/nulis?text=${nulis}&apiKey=${apiKey}`
-            await fetch(urlnulis, {method: "GET"})
-            .then(res => res.json())
-            .then(async (json) => {
-                await client.sendFileFromUrl(from, json.result, 'Nulis.jpg', 'Nih anjim', id)
-            }).catch(e => client.reply(from, "Error: "+ e));
+        case '!nh':
+            //if (isGroupMsg) return client.reply(from, 'Sorry this command for private chat only!', id)
+            if (args.length === 2) {
+                const nuklir = body.split(' ')[1]
+                client.reply(from, mess.wait, id)
+                const cek = await nhentai.exists(nuklir)
+                if (cek === true)  {
+                    try {
+                        const api = new API()
+                        const pic = await api.getBook(nuklir).then(book => {
+                            return api.getImageURL(book.cover)
+                        })
+                        const dojin = await nhentai.getDoujin(nuklir)
+                        const { title, details, link } = dojin
+                        const { parodies, tags, artists, groups, languages, categories } = await details
+                        var teks = `*Title* : ${title}\n\n*Parodies* : ${parodies}\n\n*Tags* : ${tags.join(', ')}\n\n*Artists* : ${artists.join(', ')}\n\n*Groups* : ${groups.join(', ')}\n\n*Languages* : ${languages.join(', ')}\n\n*Categories* : ${categories}\n\n*Link* : ${link}`
+                        //exec('nhentai --id=' + nuklir + ` -P mantap.pdf -o ./hentong/${nuklir}.pdf --format `+ `${nuklir}.pdf`, (error, stdout, stderr) => {
+                        client.sendFileFromUrl(from, pic, 'hentod.jpg', teks, id)
+                            //client.sendFile(from, `./hentong/${nuklir}.pdf/${nuklir}.pdf.pdf`, then(() => `${title}.pdf`, '', id)).catch(() => 
+                            //client.sendFile(from, `./hentong/${nuklir}.pdf/${nuklir}.pdf.pdf`, `${title}.pdf`, '', id))
+                            /*if (error) {
+                                console.log('error : '+ error.message)
+                                return
+                            }
+                            if (stderr) {
+                                console.log('stderr : '+ stderr)
+                                return
+                            }
+                            console.log('stdout : '+ stdout)*/
+                            //})
+                    } catch (err) {
+                        client.reply(from, '[❗] Terjadi kesalahan, mungkin kode nuklir salah', id)
+                    }
+                } else {
+                    client.reply(from, '[❗] Kode nuClear Salah!')
+                }
+            } else {
+                client.reply(from, '[ WRONG ] Kirim perintah *!nh [nuClear]* untuk contoh kirim perintah *!readme*')
+            }
             break
+        case '!nhen':
+            if (!isOwner) return client.reply(from, 'ha',id)
+            if (args.length >=2){
+                await client.simulateTyping(from, true)
+                client.sendText(from, '⏳ Tunggu yaa, sedang proses . . . ⏳')
+                const code = args[1]
+                const url = 'https://nhder.herokuapp.com/download/nhentai/'+code+'/zip'
+                const short = []
+                const shortener = await urlShortener(url)
+                // console.log('Shortlink: '+ shortener)
+                url['short'] = shortener
+                short.push(url)
+                const caption = `Link: ${shortener}\n\nDonasi: kamu dapat membantuku mentrakteer melalui https://trakteer.id/Yusakha \nTerimakasih.`
+                client.sendText(from, caption)
+            } else {
+                client.sendText(from, 'Maaf tolong masukan code')
+            }
+            break
+        // case '!yt':
+        // case '!youtube':
+        //     if (args.length == 2) {
+        //         const url = args[1]
+        //         if (!url.match(isUrl) && !url.includes('youtube.com')) return client.sendText(from, 'Maaf, url yang kamu kirim tidak valid')
+        //         // await client.sendText(from, "*Scraping Metadata...*");
+        //         await client.sendText(from, '⏳ Tunggu yaa, sedang proses . . . ⏳')
+        //         youtube(url)
+        //         .then(async (videoMeta) => {
+        //             try {
+        //                 const title = videoMeta.response.title
+        //                 const thumbnail = videoMeta.response.thumbnail
+        //                 const links = videoMeta.response.links
+        //                 const shorts = []
+        //                 for (var i = 0; i < links.length; i++) {
+        //                     const shortener = await urlShortener(links[i].url)
+        //                     // console.log('Shortlink: ' + shortener)
+        //                     links[i]['short'] = shortener
+        //                     shorts.push(links[i])
+        //                 }
+        //                 const link = shorts.map((x) => `${x.resolution} Quality: ${x.short}`)
+        //                 const caption = `Text: ${title} \nLink Download: \n${link.join('\n')} \n\nDonasi: kamu dapat membantuku beli cendol dengan menyawer melalui https://saweria.co/donate/yuzusa atau mentrakteer melalui https://trakteer.id/yuzusaha \nTerimakasih.`
+        //                 client.sendFileFromUrl(from,thumbnail, 'videos.jpg', caption )
+        //             } catch (err) {
+        //                 client.sendText(from, `Error, ` + err)
+        //             }
+        //         })
+        //         .catch((err) => {
+        //             // client.sendText(from, `Error, url tidak valid atau tidak memuat video \n\n${err}`)
+        //             client.sendText(from, `Error, user private atau link salah \n\n${err}`)
+        //         })
+        //     }else{
+
+        //     }
+        //     break
+        // case '!ytmp3':
+        //         const teksyt = body.slice(7)
+        //         axios.get(`https://st4rz.herokuapp.com/api/ytv?url=${teksyt}`).then((res) => {
+        //             let hasil = `Audio telah tersedia pada link di bawah, silahkan klik link dan download hasilnya\n👇👇👇👇👇👇👇👇👇\n\nJudul: ${res.data.title}\n\nUkuran audio: ${res.data.filesize}\n\nLink: ${res.data.result}`;
+        //             client.reply(id, hasil ,MessageType.text,id);
+        //         })
+        //     break
         // case '!instagram':
         // case '!ig':
         //     if (args.length == 0) return client.reply(from, `Untuk mendownload gambar atau video dari instagram\nketik: !instagram [link_ig]`, id)
@@ -292,28 +439,30 @@ hehe
 		// 	})
         //     break
         // case '!ytmp3':
-        //     if (args.length == 0) return client.reply(from, `Untuk mendownload lagu dari youtube\nketik: !ytmp3 [link_yt]`, id)
+        //     // if (!isMe) return
+		// 	if (args.length == 0) return aruga.reply(from, `Untuk mendownload lagu dari youtube\nketik: ${prefix}ytmp3 [link_yt]`, id)
         //     const linkmp3 = args[0].replace('https://youtu.be/','').replace('https://www.youtube.com/watch?v=','')
 		// 	api.ytmp3(`https://youtu.be/${linkmp3}`)
         //     .then(async(res) => {
-		// 		if (res.status == 'error') return api.sendFileFromUrl(from, `${res.link}`, '', `${res.error}`)
-		// 		await client.sendFileFromUrl(from, `${res.thumb}`, '', `Lagu ditemukan\n\nJudul ${res.title}\n\nSabar lagi dikirim`, id)
-		// 		await client.sendFileFromUrl(from, `${res.link}`, '', '', id)
+		// 		if (res.status == 'error') return aruga.sendFileFromUrl(from, `${res.link}`, '', `${res.error}`)
+		// 		await aruga.sendFileFromUrl(from, `${res.thumb}`, '', `Lagu ditemukan\n\nJudul ${res.title}\n\nSabar lagi dikirim`, id)
+		// 		await aruga.sendFileFromUrl(from, `${res.link}`, '', '', id)
 		// 		.catch(() => {
-		// 			client.reply(from, `URL INI ${args[0]} SUDAH PERNAH DI DOWNLOAD SEBELUMNYA ..URL AKAN RESET SETELAH 60 MENIT`, id)
+		// 			aruga.reply(from, `URL INI ${args[0]} SUDAH PERNAH DI DOWNLOAD SEBELUMNYA ..URL AKAN RESET SETELAH 60 MENIT`, id)
 		// 		})
 		// 	})
         //     break
         // case '!ytmp4':
-        //     if (args.length == 0) return client.reply(from, `Untuk mendownload lagu dari youtube\nketik: !ytmp3 [link_yt]`, id)
+        //     // if (!isMe) return
+		// 	if (args.length == 0) return aruga.reply(from, `Untuk mendownload lagu dari youtube\nketik: ${prefix}ytmp3 [link_yt]`, id)
         //     const linkmp4 = args[0].replace('https://youtu.be/','').replace('https://www.youtube.com/watch?v=','')
 		// 	api.ytmp4(`https://youtu.be/${linkmp4}`)
         //     .then(async(res) => {
-		// 		if (res.status == 'error') return api.sendFileFromUrl(from, `${res.link}`, '', `${res.error}`)
-		// 		await client.sendFileFromUrl(from, `${res.thumb}`, '', `Lagu ditemukan\n\nJudul ${res.title}\n\nSabar lagi dikirim`, id)
-		// 		await client.sendFileFromUrl(from, `${res.link}`, '', '', id)
+		// 		if (res.status == 'error') return aruga.sendFileFromUrl(from, `${res.link}`, '', `${res.error}`)
+		// 		await aruga.sendFileFromUrl(from, `${res.thumb}`, '', `Lagu ditemukan\n\nJudul ${res.title}\n\nSabar lagi dikirim`, id)
+		// 		await aruga.sendFileFromUrl(from, `${res.link}`, '', '', id)
 		// 		.catch(() => {
-		// 			client.reply(from, `URL INI ${args[0]} SUDAH PERNAH DI DOWNLOAD SEBELUMNYA ..URL AKAN RESET SETELAH 60 MENIT`, id)
+		// 			aruga.reply(from, `URL INI ${args[0]} SUDAH PERNAH DI DOWNLOAD SEBELUMNYA ..URL AKAN RESET SETELAH 60 MENIT`, id)
 		// 		})
 		// 	})
         //     break
@@ -402,14 +551,57 @@ hehe
         //         }
         //     break
         case '!igstalk':
-            if (args.length == 0) return client.reply(from, `Untuk men-stalk akun instagram seseorang\nketik ${prefix}stalkig [username]\ncontoh: ${prefix}stalkig ini.arga`, id)
-            const igstalk = await api.stalkig(args[0])
-            const igstalkpict = await api.stalkigpict(args[0])
-            await client.sendFileFromUrl(from, igstalkpict, '', igstalk, id)
-            .catch(() => {
-                client.reply(from, 'Ada yang Error!', id)
+            if (args.length === 1)  return client.reply(from, 'Kirim perintah *!igstalk @username*\nContoh *#igstalk duar_amjay*', id)
+            arg = body.trim().split(' ')
+            console.log(...arg[1])
+            var slicedArgs = Array.prototype.slice.call(arg, 1);
+            console.log(slicedArgs)
+            const istalk = await slicedArgs.join(' ')
+            console.log(istalk)
+            try {
+            const istalk2 = await axios.get('https://api.vhtear.com/igprofile?query=' + istalk + '&apikey=NOT-PREMIUM')
+            const { biography, follower, follow, picture, post_count, full_name, username, is_private } = istalk2.data.result
+            const istalk3 = `*User Ditemukan!*
+➸ *Username:* ${username}
+➸ *Nama:* ${full_name}
+➸ *Bio:* ${biography}
+➸ *Mengikuti:* ${follow}
+➸ *Pengikut:* ${follower}
+➸ *Jumlah Postingan:* ${post_count}
+➸ *Private:* ${is_private}`
+            
+            const pictk = await bent("buffer")(picture)
+            const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
+            client.sendImage(from, base64, username, istalk3)
+            } catch (err) {
+             console.error(err.message)
+             await client.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             client.sendText(ownerNumber, 'Igstalk Error : ' + err)
+           }
+          break
+        case '!brainly':
+        // if (!isGroupMsg) return client.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+        if (args.length >= 2){
+            const BrainlySearch = require('./lib/brainly')
+            let tanya = body.slice(9)
+            let jum = Number(tanya.split('.')[1]) || 2
+            if (jum > 10) return client.reply(from, 'Max 10!', id)
+            if (Number(tanya[tanya.length-1])){
+                tanya
+            }
+            await BrainlySearch(tanya.split('.')[0],Number(jum), function(res){
+                res.forEach(x=>{
+                    if (x.jawaban.fotoJawaban.length == 0) {
+                        client.reply(from, `➸ *Pertanyaan* : ${x.pertanyaan}\n\n➸ *Jawaban* :  ͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏${x.jawaban.judulJawaban}\n`, id)
+                    } else {
+                        client.reply(from, `➸ *Pertanyaan* : ${x.pertanyaan}\n\n➸ *Jawaban* 〙:  ͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏͏${x.jawaban.judulJawaban}\n\n➸ *Link foto jawaban* : ${x.jawaban.fotoJawaban.join('\n')}`, id)
+                    }
+                })
             })
-            break
+        } else {
+            client.reply(from, 'Usage :\n!brainly [pertanyaan] [.jumlah]\n\nEx : \n!brainly NKRI .2', id)
+        }
+        break
         case '!anime':
             const keyword = message.body.replace('!anime ', '')
             try {
@@ -446,46 +638,6 @@ hehe
             const res_animek = `Title: *${animek.title}*\n\n${animek.info}\n\nSinopsis: ${animek.sinopsis}\n\nLink Download:\n${animek.link_dl}`
             client.sendFileFromUrl(from, animek.thumb, 'kusonime.jpg', res_animek, id)
             break
-        case '!nh':
-            //if (isGroupMsg) return client.reply(from, 'Sorry this command for private chat only!', id)
-            if (args.length === 2) {
-                const nuklir = body.split(' ')[1]
-                client.reply(from, mess.wait, id)
-                const cek = await nhentai.exists(nuklir)
-                if (cek === true)  {
-                    try {
-                        const api = new API()
-                        const pic = await api.getBook(nuklir).then(book => {
-                            return api.getImageURL(book.cover)
-                        })
-                        const dojin = await nhentai.getDoujin(nuklir)
-                        const { title, details, link } = dojin
-                        const { parodies, tags, artists, groups, languages, categories } = await details
-                        var teks = `*Title* : ${title}\n\n*Parodies* : ${parodies}\n\n*Tags* : ${tags.join(', ')}\n\n*Artists* : ${artists.join(', ')}\n\n*Groups* : ${groups.join(', ')}\n\n*Languages* : ${languages.join(', ')}\n\n*Categories* : ${categories}\n\n*Link* : ${link}`
-                        //exec('nhentai --id=' + nuklir + ` -P mantap.pdf -o ./hentong/${nuklir}.pdf --format `+ `${nuklir}.pdf`, (error, stdout, stderr) => {
-                        client.sendFileFromUrl(from, pic, 'hentod.jpg', teks, id)
-                            //client.sendFile(from, `./hentong/${nuklir}.pdf/${nuklir}.pdf.pdf`, then(() => `${title}.pdf`, '', id)).catch(() => 
-                            //client.sendFile(from, `./hentong/${nuklir}.pdf/${nuklir}.pdf.pdf`, `${title}.pdf`, '', id))
-                            /*if (error) {
-                                console.log('error : '+ error.message)
-                                return
-                            }
-                            if (stderr) {
-                                console.log('stderr : '+ stderr)
-                                return
-                            }
-                            console.log('stdout : '+ stdout)*/
-                            //})
-                    } catch (err) {
-                        client.reply(from, '[❗] Terjadi kesalahan, mungkin kode nuklir salah', id)
-                    }
-                } else {
-                    client.reply(from, '[❗] Kode nuClear Salah!')
-                }
-            } else {
-                client.reply(from, '[ WRONG ] Kirim perintah *!nh [nuClear]* untuk contoh kirim perintah *!readme*')
-            }
-        	break
         case '!wait':
             if (isMedia && type === 'image' || quotedMsg && quotedMsg.type === 'image') {
                 if (isMedia) {
@@ -543,6 +695,7 @@ hehe
                 client.reply(from, 'Usage: \n!quotemaker |teks|watermark|theme\n\nEx :\n!quotemaker |ini contoh|bicit|random', id)
             }
             break
+            
         case '!bc':
             if (!isOwner) return client.reply(from, 'Perintah ini hanya untuk Owner bot!', id)
             let msg = body.slice(4)
@@ -562,6 +715,15 @@ hehe
                 if (!cvkz.isReadOnly) await client.sendText(ids, msgs)
             }
             client.reply(from, 'Broadcast Success!', id)
+            break
+        case '!cg':
+            if (!isOwner) return client.reply(from, 'Perintah ini hanya untuk Owner bot', id)
+            repeatz = body.slice(4)
+            const agrup = await client.getAllGroups()
+            for (let gclists of agrup) {
+                await client.sendText(gclists.contact.id, repeatz)
+            }
+            client.reply(from, 'Ya', id)
             break
         case '!tag':
             if (!isGroupMsg) return client.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
@@ -590,12 +752,25 @@ hehe
             }
             client.reply(from, 'Succes kick all member', id)
             break
+        case '!promoteall':
+            if (!isGroupMsg) return client.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isBotGroupAdmins) return client.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            const allMemz = await client.getGroupMembers(groupId)
+            for (let i = 0; i < allMemz.length; i++) {
+                if (groupAdmins.includes(allMemz[i].id)) {
+                    console.log('Upss this is Admin group')
+                } else {
+                    await client.promoteParticipant(groupId, allMemz[i].id)
+                }
+            }
+            client.reply(from, 'Succes promote all member', id)
+            break
         case '!leaveall':
             if (!isOwner) return client.reply(from, 'Perintah ini hanya untuk Owner bot', id)
             const allChats = await client.getAllChatIds()
             const allGroups = await client.getAllGroups()
             for (let gclist of allGroups) {
-                await client.sendText(gclist.contact.id, `Maaf bot sedang pembersihan, total chat aktif : ${allChats.length}`)
+                // await client.sendText(gclist.contact.id, `Maaf bot sedang pembersihan, total chat aktif : ${allChats.length}`)
                 await client.leaveGroup(gclist.contact.id)
             }
             client.reply(from, 'Succes leave all group!', id)
@@ -663,16 +838,11 @@ hehe
             if (args.length < 2) return client.reply(from, 'Kirim perintah *!join linkgroup key*\n\nEx:\n!join https://chat.whatsapp.com/blablablablablabla abcde\nuntuk key kamu bisa mendapatkannya hanya dengan donasi 10k', id)
             const link = args[1]
             const key = args[2]
-            const tGr = await client.getAllGroups()
-            const minMem = 0
             const isLink = link.match(/(https:\/\/chat.whatsapp.com)/gi)
-            if (key !== 'yusakha') return client.reply(from, '*key* salah! silahkan chat owner bot unruk mendapatkan key yang valid', id)
+            if (key !== 'yo') return client.reply(from, '*key* salah! silahkan chat owner bot unruk mendapatkan key yang valid', id)
             const check = await client.inviteInfo(link)
-            if (!isLink) return client.reply(from, 'Ini link? 👊🤬', id)
-            if (tGr.length > 100) return client.reply(from, 'Maaf jumlah group sudah maksimal!', id)
-            if (check.size < minMem) return client.reply(from, 'Member group tidak melebihi 30, bot tidak bisa masuk', id)
             if (check.status === 200) {
-                await client.joinGroupViaLink(link).then(() => client.reply(from, 'Bot akan segera masuk!'))
+                await client.joinGroupViaLink(link).then(() => client.reply(from, 'Bot telah masuk!',id))
             } else {
                 client.reply(from, 'Link group tidak valid!', id)
             }
@@ -690,13 +860,6 @@ hehe
             const lagu = body.slice(7)
             const lirik = await liriklagu(lagu)
             client.reply(from, lirik, id)
-            break
-        case '!chord':
-            if (args.length === 1) return client.reply(from, 'Kirim perintah *!chord [query]*, contoh *!chord aku bukan boneka*', id)
-            const query__ = body.slice(7)
-            const chord = await get.get(`https://mhankbarbar.herokuapp.com/api/chord?q=${query__}&apiKey=${apiKey}`).json()
-            if (chord.error) return client.reply(from, chord.error, id)
-            client.reply(from, chord.result, id)
             break
         // case '!loli':
         //     const loli = await get.get('https://mhankbarbar.herokuapp.com/api/randomloli').json()
@@ -788,7 +951,7 @@ https://github.com/Yusakha/Rin
 
 Owner Bot Rin : !creator
 
-Join gc rin ? https://chat.whatsapp.com/E3jlYW13ett3wLu8fOCFEd`)
+Join gc rin ? https://chat.whatsapp.com/BZr36Oiy3e3AupxO3OjTom`,id)
             break
         case '!snk':
             client.reply(from, snk, id)

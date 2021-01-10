@@ -20,15 +20,15 @@ const start = async (client = new Client()) => {
             msgHandler(client, message)
         }))
         
-        client.onAddedToGroup(((chat) => {
-            let totalMem = chat.groupMetadata.participants.length
-            if (totalMem < 999) { 
-                client.sendText(chat.id, ``).then(() => 
-                client.leaveGroup(chat.id)).then(() => client.deleteChat(chat.id))
-            } else {
-                client.sendText(chat.groupMetadata.id, `Halo warga grup *${chat.contact.name}* terimakasih sudah menginvite bot ini, untuk melihat menu silahkan kirim *!help*`)
-            }
-        }))
+        // client.onAddedToGroup(((chat) => {
+        //     let totalMem = chat.groupMetadata.participants.length
+        //     if (totalMem < 999) { 
+        //         client.sendText(chat.id, `!donasi dulu`).then(() => 
+        //         client.leaveGroup(chat.id)).then(() => client.deleteChat(chat.id))
+        //     } else {
+        //         client.sendText(chat.groupMetadata.id, `Halo warga grup *${chat.contact.name}* terimakasih sudah menginvite bot ini, untuk melihat menu silahkan kirim *!help*`)
+        //     }
+        // }))
 
         /*client.onAck((x => {
             const { from, to, ack } = x
